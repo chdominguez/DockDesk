@@ -23,6 +23,7 @@ public final class TwinSession {
     private var right: VirtualScreen?
     private var mirrors: [Mirror] = []
     private var window: NSWindow?
+    private var overlaySpace: OverlaySpace?
     private var guardTimer: Timer?
     private var physical: CGDirectDisplayID = 0
     private let w: Int, h: Int, fps: Int
@@ -61,6 +62,7 @@ public final class TwinSession {
         guardTimer?.invalidate(); guardTimer = nil
         mirrors.forEach { $0.stop() }
         mirrors = []
+        overlaySpace = nil
         window?.orderOut(nil); window = nil
         left = nil; right = nil // releasing the objects removes the virtual displays
     }
@@ -100,6 +102,9 @@ public final class TwinSession {
         win.setFrame(screen.frame, display: true)
         win.orderFrontRegardless()
         window = win
+        // Keep the picture up during Mission Control and App Exposé animations.
+        overlaySpace = OverlaySpace(window: win)
+        log(overlaySpace == nil ? "overlay space unavailable, using a normal window" : "output window placed above all spaces")
     }
 
     private func layout() {
