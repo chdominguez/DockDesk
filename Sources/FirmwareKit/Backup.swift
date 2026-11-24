@@ -4,7 +4,7 @@
 import Foundation
 
 public struct BackupRecord: Codable, Equatable {
-    public var format = "twindesk-vmm5331-backup-1"
+    public var format = "dockdesk-vmm5331-backup-1"
     public var createdAt: String
     public var firmwareVersion: String       // DPCD 0x50A at backup time
     public var activeBank: Int               // RAM 0x20010C at backup time

@@ -6,14 +6,14 @@ import ScreenCaptureKit
 final class Mirror: NSObject, SCStreamOutput, SCStreamDelegate {
     let layer = CALayer()
     private var stream: SCStream?
-    private let queue = DispatchQueue(label: "twindesk.mirror", qos: .userInteractive)
+    private let queue = DispatchQueue(label: "dockdesk.mirror", qos: .userInteractive)
     var onStop: ((Error) -> Void)?
     private(set) var frames = 0
 
     func start(displayID: CGDirectDisplayID, width: Int, height: Int, fps: Int) async throws {
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
         guard let target = content.displays.first(where: { $0.displayID == displayID }) else {
-            throw NSError(domain: "TwinDesk", code: 1, userInfo: [NSLocalizedDescriptionKey: "display \(displayID) is not capturable"])
+            throw NSError(domain: "DockDesk", code: 1, userInfo: [NSLocalizedDescriptionKey: "display \(displayID) is not capturable"])
         }
         let cfg = SCStreamConfiguration()
         cfg.width = width

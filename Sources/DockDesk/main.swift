@@ -1,0 +1,3 @@
+import DockDeskApp
+
+dockdeskMain()

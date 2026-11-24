@@ -2,7 +2,7 @@ import DockKit
 import FirmwareKit
 import SwiftUI
 
-/// Setup window: what TwinDesk found, how it works, and hub firmware management.
+/// Setup window: what DockDesk found, how it works, and hub firmware management.
 struct SetupView: View {
     let state: DockState
     let info: DockInfo?
@@ -14,7 +14,7 @@ struct SetupView: View {
                 HStack(spacing: 12) {
                     if let icon = NSApp.applicationIconImage { Image(nsImage: icon).resizable().frame(width: 52, height: 52) }
                     VStack(alignment: .leading) {
-                        Text("TwinDesk").font(.largeTitle).bold()
+                        Text("DockDesk").font(.largeTitle).bold()
                         Text("Two monitors from one cable on a Dell WD19 dock.").foregroundStyle(.secondary)
                     }
                 }
@@ -24,12 +24,12 @@ struct SetupView: View {
                 firmwareSection
                 Divider()
                 Text("How it works").font(.headline)
-                step("1", "The dock's video hub can cut one wide picture in two, one half per monitor. TwinDesk switches that on.")
-                step("2", "The hub only offers the wide display after it detects a monitor. After a dock reconnect TwinDesk switches one monitor off and asks you to press its power button. With \"Start in split mode\" below, this step is not needed.")
+                step("1", "The dock's video hub can cut one wide picture in two, one half per monitor. DockDesk switches that on.")
+                step("2", "The hub only offers the wide display after it detects a monitor. After a dock reconnect DockDesk switches one monitor off and asks you to press its power button. With \"Start in split mode\" below, this step is not needed.")
                 step("3", "Wide gives one desktop across both monitors. Twin adds two virtual monitors on top so macOS treats them as separate desktops. Twin needs Screen Recording permission.")
                 Divider()
                 Text("Good to know").font(.headline)
-                Text("• Each monitor runs at 1920×1080, 60 Hz.\n• Twin mode adds a frame or two of delay and shows copy-protected video as black.\n• The hub setting is temporary and resets when the dock is unplugged, unless the hub starts in split mode.\n• TwinDesk uses private macOS interfaces and may break with a system update.")
+                Text("• Each monitor runs at 1920×1080, 60 Hz.\n• Twin mode adds a frame or two of delay and shows copy-protected video as black.\n• The hub setting is temporary and resets when the dock is unplugged, unless the hub starts in split mode.\n• DockDesk uses private macOS interfaces and may break with a system update.")
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(24)
@@ -37,7 +37,7 @@ struct SetupView: View {
         }
         .alert(item: $firmware.pendingInstall) { pkg in
             Alert(title: Text("Install hub firmware \(pkg.hubVersionString)?"),
-                  message: Text("TwinDesk will download Dell's package \(pkg.fileName), back up the current firmware, write the new one to the dock's spare slot, verify it and restart the video hub. It takes about seven minutes and the external screens go dark briefly.\n\nKeep the dock plugged in and powered the whole time. An interrupted or failed write can leave the dock without video. This has been tested on one WD19S only."),
+                  message: Text("DockDesk will download Dell's package \(pkg.fileName), back up the current firmware, write the new one to the dock's spare slot, verify it and restart the video hub. It takes about seven minutes and the external screens go dark briefly.\n\nKeep the dock plugged in and powered the whole time. An interrupted or failed write can leave the dock without video. This has been tested on one WD19S only."),
                   primaryButton: .destructive(Text("Install")) { firmware.install(pkg) },
                   secondaryButton: .cancel())
         }
@@ -50,11 +50,11 @@ struct SetupView: View {
         case .noDock:
             banner("No dock detected", "Connect the dock to the Mac with both monitors on its DisplayPort sockets.", .secondary)
         case .unsupported(let why):
-            banner("This dock is not supported", "TwinDesk needs a Dell WD19-family dock with a Synaptics VMM5331 hub. Found: \(why).", .orange)
+            banner("This dock is not supported", "DockDesk needs a Dell WD19-family dock with a Synaptics VMM5331 hub. Found: \(why).", .orange)
         case .ready(let v):
             banner("Ready", "Hub firmware \(v) has the split feature. Choose Twin or Wide from the menu bar icon.", .green)
         case .firmwareTooNew(let v):
-            banner("Hub firmware \(v) is too new", "Dell removed the split feature after hub firmware 05.07.04. Install 05.07.04 below to use TwinDesk.", .orange)
+            banner("Hub firmware \(v) is too new", "Dell removed the split feature after hub firmware 05.07.04. Install 05.07.04 below to use DockDesk.", .orange)
         }
     }
 
@@ -63,7 +63,7 @@ struct SetupView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Hub firmware").font(.headline)
             if let info, supported {
-                Text("Installed: \(info.firmware)\(info.bootsInSplitMode ? ", starts in split mode (modified by TwinDesk)" : "")").monospacedDigit()
+                Text("Installed: \(info.firmware)\(info.bootsInSplitMode ? ", starts in split mode (modified by DockDesk)" : "")").monospacedDigit()
             }
             switch firmware.phase {
             case .working:
@@ -99,7 +99,7 @@ struct SetupView: View {
                         Button("Install", role: .destructive) { firmware.install(split, splitDefault: true) }
                         Button("Cancel", role: .cancel) {}
                     } message: {
-                        Text("TwinDesk will write Dell's \(split.hubVersionString) again with one setting changed, so the hub starts in split mode and the wide display is there right after a reconnect. This is no longer an unmodified Dell image. Mirror stays available from the menu.\n\nSame procedure and risks as any firmware install: about seven minutes, keep the dock plugged in and powered, and an interrupted or failed write can leave the dock without video. Tested on one WD19S only. \"Restore Dell's \(split.hubVersionString)\" undoes it.")
+                        Text("DockDesk will write Dell's \(split.hubVersionString) again with one setting changed, so the hub starts in split mode and the wide display is there right after a reconnect. This is no longer an unmodified Dell image. Mirror stays available from the menu.\n\nSame procedure and risks as any firmware install: about seven minutes, keep the dock plugged in and powered, and an interrupted or failed write can leave the dock without video. Tested on one WD19S only. \"Restore Dell's \(split.hubVersionString)\" undoes it.")
                     }
                 HStack {
                     Button("Back up now") { firmware.backup() }.disabled(!supported)

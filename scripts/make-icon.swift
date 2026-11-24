@@ -1,4 +1,4 @@
-// Renders the TwinDesk app icon and writes Resources/AppIcon.icns.
+// Renders the DockDesk app icon and writes Resources/AppIcon.icns.
 // Run: swift scripts/make-icon.swift
 import AppKit
 

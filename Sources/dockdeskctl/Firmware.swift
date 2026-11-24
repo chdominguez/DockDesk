@@ -2,18 +2,18 @@ import CDock
 import FirmwareKit
 import Foundation
 
-/// `twindeskctl fw ...`: staged hardware checks for the hub flasher (docs/flasher.md section 11).
+/// `dockdeskctl fw ...`: staged hardware checks for the hub flasher (docs/flasher.md section 11).
 func firmwareCommand(_ args: [String]) {
     guard let dock = td_open() else { fail("no dock") }
     defer { td_close(dock) }
     let t = CDockTransport(dock: dock)
-    let backupDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("TwinDesk/Backups")
+    let backupDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("DockDesk/Backups")
     func value(_ flag: String) -> String? { args.firstIndex(of: flag).flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil } }
     func hexs(_ b: [UInt8]) -> String { b.map { String(format: "%02x", $0) }.joined(separator: " ") }
     func latestBackup() throws -> VerifiedBackup {
         if let p = value("--backup") { return try Backup.load(URL(fileURLWithPath: p)) }
         let bins = (try? FileManager.default.contentsOfDirectory(at: backupDir, includingPropertiesForKeys: [.contentModificationDateKey]))?.filter { $0.pathExtension == "bin" } ?? []
-        guard let newest = bins.max(by: { ((try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast) < ((try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast) }) else { fail("no backup in \(backupDir.path); run: twindeskctl fw backup") }
+        guard let newest = bins.max(by: { ((try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast) < ((try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast) }) else { fail("no backup in \(backupDir.path); run: dockdeskctl fw backup") }
         return try Backup.load(newest)
     }
     do {
@@ -53,7 +53,7 @@ func firmwareCommand(_ args: [String]) {
                 print(String(format: "crc16 0x00000+0x1a000: hub 0x%04x", chip))
             }
         case "flash": // dry run unless --write
-            guard let cab = value("--cab") else { fail("usage: twindeskctl fw flash --cab <dell.cab> [--split-default] [--write] [--stop-after <stage>] [--rc-reboot]") }
+            guard let cab = value("--cab") else { fail("usage: dockdeskctl fw flash --cab <dell.cab> [--split-default] [--write] [--stop-after <stage>] [--rc-reboot]") }
             let image = try FirmwarePackage.loadHubImage(fromCab: URL(fileURLWithPath: cab))
             let backup = try latestBackup()
             let snap = try DeviceReader.snapshot(t)
@@ -75,7 +75,7 @@ func firmwareCommand(_ args: [String]) {
             print("dryRun=\(rep.dryRun) stages=\(rep.completedStages.map(\.rawValue)) sent=\(rep.mutatingOpsSent) skipped=\(rep.mutatingOpsSkipped) verified=\(rep.verificationsCompared) unverified=\(rep.verificationsSkipped)")
             print(rep.nextStep)
         default:
-            fail("usage: twindeskctl fw state | backup | checksum [--crc16] | flash --cab <file> [--split-default] [--write] [--stop-after <stage>]")
+            fail("usage: dockdeskctl fw state | backup | checksum [--crc16] | flash --cab <file> [--split-default] [--write] [--stop-after <stage>]")
         }
     } catch { fail("fw: \(error)") }
 }

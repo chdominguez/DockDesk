@@ -29,7 +29,13 @@ final class FirmwareController: ObservableObject {
     var didFinish: () -> Void = {}
 
     nonisolated static let supportDir: URL = {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("TwinDesk")
+        let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let base = root.appendingPathComponent("DockDesk")
+        // The app was called TwinDesk before 0.2.0: keep its firmware backups.
+        let old = root.appendingPathComponent("TwinDesk")
+        if !FileManager.default.fileExists(atPath: base.path), FileManager.default.fileExists(atPath: old.path) {
+            try? FileManager.default.moveItem(at: old, to: base)
+        }
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         return base
     }()
@@ -93,7 +99,7 @@ final class FirmwareController: ObservableObject {
                     }
                 }
                 let rep = try exec.execute(plan, allowWrites: true)
-                guard rep.completedStages.last == .restart else { throw NSError(domain: "TwinDesk", code: 2, userInfo: [NSLocalizedDescriptionKey: rep.nextStep]) }
+                guard rep.completedStages.last == .restart else { throw NSError(domain: "DockDesk", code: 2, userInfo: [NSLocalizedDescriptionKey: rep.nextStep]) }
                 return formatVersion(plan.targetVersion)
             }
 
@@ -105,10 +111,10 @@ final class FirmwareController: ObservableObject {
                 if let i = try? Dock.info() { seen = i.firmware; bootsSplit = i.bootsInSplitMode; if seen == result && bootsSplit == splitDefault { break } }
             }
             guard seen == result else {
-                throw NSError(domain: "TwinDesk", code: 3, userInfo: [NSLocalizedDescriptionKey: "The firmware was written and verified, but the hub reports \(seen) instead of \(result). Unplug the dock's power adapter for ten seconds and check again."])
+                throw NSError(domain: "DockDesk", code: 3, userInfo: [NSLocalizedDescriptionKey: "The firmware was written and verified, but the hub reports \(seen) instead of \(result). Unplug the dock's power adapter for ten seconds and check again."])
             }
             guard bootsSplit == splitDefault else {
-                throw NSError(domain: "TwinDesk", code: 4, userInfo: [NSLocalizedDescriptionKey: "The firmware was written and verified, but the hub still starts in \(bootsSplit ? "split" : "mirror") mode. Unplug the dock's power adapter for ten seconds and check again."])
+                throw NSError(domain: "DockDesk", code: 4, userInfo: [NSLocalizedDescriptionKey: "The firmware was written and verified, but the hub still starts in \(bootsSplit ? "split" : "mirror") mode. Unplug the dock's power adapter for ten seconds and check again."])
             }
             return splitDefault ? "Hub firmware \(result) now starts in split mode. No monitor re-detect is needed after a reconnect." : "Hub firmware is now \(result)."
         }

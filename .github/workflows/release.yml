@@ -1,4 +1,4 @@
-# Builds TwinDesk.app, packages it as a DMG, publishes a GitHub release and
+# Builds DockDesk.app, packages it as a DMG, publishes a GitHub release and
 # points the Homebrew cask at it. Runs when a version tag is pushed:
 #   git tag v0.2.0 && git push origin v0.2.0
 name: Release
@@ -30,14 +30,14 @@ jobs:
 
       - name: Check the bundle
         run: |
-          codesign --verify --deep --strict dist/TwinDesk.app
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' dist/TwinDesk.app/Contents/Info.plist)" = "$VERSION"
-          lipo -archs dist/TwinDesk.app/Contents/MacOS/TwinDesk
+          codesign --verify --deep --strict dist/DockDesk.app
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' dist/DockDesk.app/Contents/Info.plist)" = "$VERSION"
+          lipo -archs dist/DockDesk.app/Contents/MacOS/DockDesk
 
       - name: Build the DMG
         run: |
           ./scripts/make-dmg.sh "$VERSION"
-          echo "SHA256=$(shasum -a 256 "dist/TwinDesk-$VERSION.dmg" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+          echo "SHA256=$(shasum -a 256 "dist/DockDesk-$VERSION.dmg" | cut -d' ' -f1)" >> "$GITHUB_ENV"
 
       - name: Publish the release
         env:
@@ -46,25 +46,25 @@ jobs:
           cat > notes.md <<NOTES
           Install with Homebrew:
 
-              brew tap chdominguez/twindesk https://github.com/chdominguez/TwinDesk
-              brew trust chdominguez/twindesk   # newer Homebrew only loads casks from trusted taps
-              brew install --cask twindesk
+              brew tap chdominguez/dockdesk https://github.com/chdominguez/DockDesk
+              brew trust chdominguez/dockdesk   # newer Homebrew only loads casks from trusted taps
+              brew install --cask dockdesk
 
-          Or download the DMG below and drag TwinDesk to Applications. The app is not notarized;
+          Or download the DMG below and drag DockDesk to Applications. The app is not notarized;
           see "Installing" in the README for the first launch.
 
           SHA-256: \`$SHA256\`
           NOTES
-          gh release create "$GITHUB_REF_NAME" "dist/TwinDesk-$VERSION.dmg" \
-            --title "TwinDesk $VERSION" --notes-file notes.md --generate-notes --verify-tag
+          gh release create "$GITHUB_REF_NAME" "dist/DockDesk-$VERSION.dmg" \
+            --title "DockDesk $VERSION" --notes-file notes.md --generate-notes --verify-tag
 
       - name: Point the Homebrew cask at this release
         run: |
           git fetch origin main
           git checkout -B main origin/main
-          sed -i '' -E "s/^  version \".*\"/  version \"$VERSION\"/; s/^  sha256 .*/  sha256 \"$SHA256\"/" Casks/twindesk.rb
+          sed -i '' -E "s/^  version \".*\"/  version \"$VERSION\"/; s/^  sha256 .*/  sha256 \"$SHA256\"/" Casks/dockdesk.rb
           git diff --quiet && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "Cask: TwinDesk $VERSION"
+          git commit -am "Cask: DockDesk $VERSION"
           git push origin main

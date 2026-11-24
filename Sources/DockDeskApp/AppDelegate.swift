@@ -24,7 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var setupWindow: NSWindow?
     private var swapped = UserDefaults.standard.bool(forKey: "swapSides")
 
-    /// The mode the user last chose; TwinDesk returns to it when the dock comes back.
+    /// The mode the user last chose; DockDesk returns to it when the dock comes back.
     private var desired: DisplayMode {
         get { DisplayMode(rawValue: UserDefaults.standard.string(forKey: "desiredMode") ?? "") ?? .mirror }
         set { UserDefaults.standard.set(newValue.rawValue, forKey: "desiredMode") }
@@ -39,7 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ n: Notification) {
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.image = NSImage(systemSymbolName: "rectangle.split.2x1", accessibilityDescription: "TwinDesk")
+        item.button?.image = NSImage(systemSymbolName: "rectangle.split.2x1", accessibilityDescription: "DockDesk")
         let menu = NSMenu()
         menu.delegate = self
         item.menu = menu
@@ -129,7 +129,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         } else {
             menuSpinner?.stopAnimation(nil)
             menuSpinner?.isHidden = true
-            button.image = NSImage(systemSymbolName: "rectangle.split.2x1", accessibilityDescription: "TwinDesk")
+            button.image = NSImage(systemSymbolName: "rectangle.split.2x1", accessibilityDescription: "DockDesk")
         }
     }
 
@@ -182,7 +182,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         setup.target = self
         menu.addItem(setup)
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Quit TwinDesk", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: "Quit DockDesk", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         refresh()
     }
 
@@ -218,7 +218,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 case .twin:
                     guard CGPreflightScreenCaptureAccess() || (!automatic && CGRequestScreenCaptureAccess()) else {
                         if automatic { autoFailed = true; busy = nil; return }
-                        alert("Screen Recording permission needed", "Twin mode copies two virtual desktops onto your monitors. Allow TwinDesk under System Settings > Privacy & Security > Screen & System Audio Recording, then choose Twin again.")
+                        alert("Screen Recording permission needed", "Twin mode copies two virtual desktops onto your monitors. Allow DockDesk under System Settings > Privacy & Security > Screen & System Audio Recording, then choose Twin again.")
                         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!)
                         busy = nil
                         return
@@ -227,14 +227,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     busy = "Starting Twin…"
                     let s = TwinSession()
                     s.swapped = swapped
-                    s.log = { NSLog("TwinDesk: %@", $0) }
+                    s.log = { NSLog("DockDesk: %@", $0) }
                     try await s.start()
                     twin = s
                 }
                 mode = target
             } catch {
                 twin?.stop(); twin = nil
-                if automatic { autoFailed = true; NSLog("TwinDesk: automatic %@ failed: %@", target.rawValue, "\(error)") }
+                if automatic { autoFailed = true; NSLog("DockDesk: automatic %@ failed: %@", target.rawValue, "\(error)") }
                 else { alert("Could not switch to \(target.rawValue)", "\(error)") }
             }
             busy = nil
@@ -243,7 +243,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     /// Hub split mode on, wait for the wide timing, 3840x1080. The hub only offers the wide timing after it
-    /// re-detects a monitor (unless its firmware boots in split mode): TwinDesk switches one monitor off over
+    /// re-detects a monitor (unless its firmware boots in split mode): DockDesk switches one monitor off over
     /// DDC and the user presses its power button, or replugs a cable if that is not possible.
     private func enterWide(automatic: Bool = false) async throws {
         busy = "Switching to Wide…"
@@ -261,12 +261,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if soft {
                 busy = "Press the power button of the monitor that turned off"
                 if !automatic {
-                    alert("Turn the monitor back on", "TwinDesk switched one monitor off so the dock detects it again. Press that monitor's power button. TwinDesk continues automatically.")
+                    alert("Turn the monitor back on", "DockDesk switched one monitor off so the dock detects it again. Press that monitor's power button. DockDesk continues automatically.")
                 }
             } else {
                 busy = "Replug one monitor cable at the dock to finish"
                 if !automatic {
-                    alert("Replug one monitor", "Unplug one monitor's DisplayPort cable at the dock, wait five seconds and plug it back in. Do not unplug the dock from the Mac. TwinDesk continues automatically.")
+                    alert("Replug one monitor", "Unplug one monitor's DisplayPort cable at the dock, wait five seconds and plug it back in. Do not unplug the dock from the Mac. DockDesk continues automatically.")
                 }
             }
             for _ in 0..<60 where !i.offersWideTiming {
@@ -299,7 +299,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func showSetup() {
         if setupWindow == nil {
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 580, height: 680), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
-            w.title = "TwinDesk Setup"
+            w.title = "DockDesk Setup"
             w.isReleasedWhenClosed = false
             w.center()
             setupWindow = w

@@ -36,12 +36,12 @@ case "mode":
         case "mirror":
             try? Dock.setNativeMode(width: 1920, height: 1080)
             try Dock.setSplit(false)
-        default: fail("usage: twindeskctl mode wide|mirror")
+        default: fail("usage: dockdeskctl mode wide|mirror")
         }
     } catch { fail("\(error)") }
 case "kick":
     // Experiment: find a software replacement for replugging a monitor cable.
-    //   twindeskctl kick <mst|mst6|power|none> [--set split|mirror|keep] [--seconds N]
+    //   dockdeskctl kick <mst|mst6|power|none> [--set split|mirror|keep] [--seconds N]
     // Sets the hub mode, applies the method, then reports whether the hub rebuilt its EDID.
     let rest = Array(args.dropFirst())
     func opt(_ flag: String) -> String? { rest.firstIndex(of: flag).flatMap { $0 + 1 < rest.count ? rest[$0 + 1] : nil } }
@@ -105,7 +105,7 @@ case "kick":
         }
         print("  sideband off:", td_sb_end(d))
     case "none": break
-    default: fail("usage: twindeskctl kick mst|mst6|power|link|phy|rdpcd|ddc|none [--set split|mirror|keep] [--port N] [--hold S] [--seconds N]")
+    default: fail("usage: dockdeskctl kick mst|mst6|power|link|phy|rdpcd|ddc|none [--set split|mirror|keep] [--port N] [--hold S] [--seconds N]")
     }
     td_close(d)
     var last = ""
@@ -119,7 +119,7 @@ case "fw":
 case "modes":
     if let d = Dock.externalDisplay() { td_dump_modes(d) } else { fail("no external display") }
 case "twin":
-    // Runs until interrupted (Ctrl-C) or for N seconds: twindeskctl twin [seconds]
+    // Runs until interrupted (Ctrl-C) or for N seconds: dockdeskctl twin [seconds]
     MainActor.assumeIsolated {
         let seconds = args.dropFirst().first.flatMap(Double.init)
         let app = NSApplication.shared
@@ -142,5 +142,5 @@ case "twin":
         app.run()
     }
 default:
-    fail("usage: twindeskctl status | mode wide|mirror | twin [seconds]")
+    fail("usage: dockdeskctl status | mode wide|mirror | twin [seconds]")
 }

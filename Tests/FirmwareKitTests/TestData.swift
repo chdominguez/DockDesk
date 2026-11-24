@@ -1,5 +1,5 @@
 // Test fixtures: the real flash dump and Dell packages, when present on this machine.
-// Override locations with TWINDESK_FWDUMP_DIR / TWINDESK_CAB_DIR. Tests that need them are disabled
+// Override locations with DOCKDESK_FWDUMP_DIR / DOCKDESK_CAB_DIR. Tests that need them are disabled
 // (not failed) when the files are missing.
 
 import Foundation
@@ -7,8 +7,8 @@ import Foundation
 
 enum TD {
     static let env = ProcessInfo.processInfo.environment
-    static let dumpDir = env["TWINDESK_FWDUMP_DIR"] ?? "testdata/fwdump"
-    static let cabDir = env["TWINDESK_CAB_DIR"]
+    static let dumpDir = env["DOCKDESK_FWDUMP_DIR"] ?? "testdata/fwdump"
+    static let cabDir = env["DOCKDESK_CAB_DIR"]
         ?? "testdata/packages"
 
     static let dump: [UInt8]? = {

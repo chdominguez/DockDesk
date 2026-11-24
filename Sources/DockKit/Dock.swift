@@ -15,7 +15,7 @@ public struct DockInfo {
     public var firmware: String { String(format: "%02d.%02d.%02d", raw.fw.0, raw.fw.1, raw.fw.2) }
     public var chip: String { String(format: "VMM%04X", raw.chip_id) }
     public var isSplitMode: Bool { raw.mode_byte & 0x0f == 2 }
-    /// The hub's firmware starts in split mode (TwinDesk's modified 05.07.04), so no re-detect is needed after a reconnect.
+    /// The hub's firmware starts in split mode (DockDesk's modified 05.07.04), so no re-detect is needed after a reconnect.
     public var bootsInSplitMode: Bool { raw.boot_mode_byte & 0x0f == 2 }
     public var offersWideTiming: Bool { raw.wide_timing }
     public var isSplitting: Bool { raw.splitting }
@@ -93,4 +93,4 @@ public enum Dock {
 public enum VirtualVendor { public static let id: UInt32 = 0x7477 }
 
 /// One serial queue for everything that talks to the dock, so polling can never interleave with a firmware job.
-public enum DockQueue { public static let shared = DispatchQueue(label: "twindesk.dock") }
+public enum DockQueue { public static let shared = DispatchQueue(label: "dockdesk.dock") }

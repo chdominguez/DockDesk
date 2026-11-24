@@ -516,7 +516,7 @@ swift test --scratch-path .build-fw --filter FirmwareKitTests \
 The Command Line Tools have no XCTest, so the tests use Swift Testing. With CLT 6.4.2 the
 `emit-module` job does not get the Testing macro plugin path ("plugin for module 'TestingMacros' not
 found"), hence the extra `-Xswiftc` flags. Tests that need the dump or the cabinets are disabled when
-the files are missing; override their locations with `TWINDESK_FWDUMP_DIR` and `TWINDESK_CAB_DIR`.
+the files are missing; override their locations with `DOCKDESK_FWDUMP_DIR` and `DOCKDESK_CAB_DIR`.
 
 ## Split as the boot default (modified image)
 

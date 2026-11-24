@@ -1,10 +1,12 @@
-# TwinDesk
+# DockDesk
 
 Two monitors from one cable on a Dell WD19 dock, on a Mac.
 
-macOS does not support DisplayPort MST, so a Mac connected to a Dell WD19/WD19S dock shows the same picture on every monitor. TwinDesk is a menu-bar app that works around this using a feature of the dock's own video hub, and then makes macOS treat the two monitors as separate desktops.
+macOS does not support DisplayPort MST, so a Mac connected to a Dell WD19/WD19S dock shows the same picture on every monitor. DockDesk is a menu-bar app that works around this using a feature of the dock's own video hub, and then makes macOS treat the two monitors as separate desktops.
 
-<img src="Resources/AppIcon.png" width="128" alt="TwinDesk icon">
+<img src="Resources/AppIcon.png" width="128" alt="DockDesk icon">
+
+Formerly called TwinDesk (renamed in 0.2.0).
 
 > **Status: experimental.** Verified on exactly one Dell WD19S and one MacBook Air (M5, macOS 27). It relies on private macOS interfaces and on firmware behaviour Dell has since removed. Read [Risks](#risks) before using it, especially the firmware part.
 
@@ -20,9 +22,9 @@ It also restores your chosen mode when the dock reconnects or the Mac wakes, and
 
 ## How it works
 
-1. **The hub does the splitting.** The dock contains a Synaptics VMM5331 MST hub. Its firmware has a mode ("ViewXpand") in which it advertises one combined display and sends the left half of the picture to one output and the right half to the other. TwinDesk switches that mode on by setting one byte in the hub's memory over the DisplayPort AUX channel, using Synaptics' vendor protocol.
-2. **macOS sends one wide picture.** TwinDesk selects the native 3840×1080 mode, which macOS otherwise only offers scaled.
-3. **Twin mode adds two virtual monitors.** TwinDesk creates two virtual 1080p displays, captures them with ScreenCaptureKit, and draws them side by side onto the physical wide display. macOS sees two monitors; the hub delivers each half to the right screen.
+1. **The hub does the splitting.** The dock contains a Synaptics VMM5331 MST hub. Its firmware has a mode ("ViewXpand") in which it advertises one combined display and sends the left half of the picture to one output and the right half to the other. DockDesk switches that mode on by setting one byte in the hub's memory over the DisplayPort AUX channel, using Synaptics' vendor protocol.
+2. **macOS sends one wide picture.** DockDesk selects the native 3840×1080 mode, which macOS otherwise only offers scaled.
+3. **Twin mode adds two virtual monitors.** DockDesk creates two virtual 1080p displays, captures them with ScreenCaptureKit, and draws them side by side onto the physical wide display. macOS sees two monitors; the hub delivers each half to the right screen.
 
 The research behind this, including why forcing MST from the Mac cannot work, is in [docs/](docs/).
 
@@ -31,27 +33,27 @@ The research behind this, including why forcing MST from the Mac cannot work, is
 - Apple Silicon Mac, macOS 14 or later (developed on macOS 27).
 - Dell WD19-family dock with the Synaptics VMM5331 hub (WD19, WD19S; untested on the Thunderbolt variants).
 - Two monitors with **identical timings** on the dock's DisplayPort outputs.
-- **Hub firmware 05.07.04 or older.** Dell removed the split feature in 05.07.07. TwinDesk can install 05.07.04 for you (see below).
+- **Hub firmware 05.07.04 or older.** Dell removed the split feature in 05.07.07. DockDesk can install 05.07.04 for you (see below).
 
 ## Installing
 
 With [Homebrew](https://brew.sh):
 
 ```
-brew tap chdominguez/twindesk https://github.com/chdominguez/TwinDesk
-brew trust chdominguez/twindesk   # newer Homebrew only loads casks from trusted taps
-brew install --cask twindesk
+brew tap chdominguez/dockdesk https://github.com/chdominguez/DockDesk
+brew trust chdominguez/dockdesk   # newer Homebrew only loads casks from trusted taps
+brew install --cask dockdesk
 ```
 
-Or download the DMG from the [latest release](https://github.com/chdominguez/TwinDesk/releases/latest) and drag TwinDesk to Applications.
+Or download the DMG from the [latest release](https://github.com/chdominguez/DockDesk/releases/latest) and drag DockDesk to Applications.
 
-TwinDesk is not notarized by Apple. If macOS refuses to open it the first time, allow it under System Settings → Privacy & Security ("Open Anyway"), or run `xattr -dr com.apple.quarantine /Applications/TwinDesk.app`. Because the app is ad-hoc signed, macOS asks for the Screen Recording permission again after every update.
+DockDesk is not notarized by Apple. If macOS refuses to open it the first time, allow it under System Settings → Privacy & Security ("Open Anyway"), or run `xattr -dr com.apple.quarantine /Applications/DockDesk.app`. Because the app is ad-hoc signed, macOS asks for the Screen Recording permission again after every update.
 
 ## Using it
 
 1. Install and start the app (or [build it](#building)).
 2. Open **Setup and firmware…** from the menu bar icon. It tells you whether your dock and firmware are supported.
-3. Choose **Wide** or **Twin**. The hub only offers the wide display once it re-detects a monitor, so the first time after each dock reconnect TwinDesk switches one monitor off (over DDC/CI) and asks you to press its power button. If that is not possible it asks you to replug one monitor's cable at the dock instead. To avoid this step altogether, see [Start in split mode](#start-in-split-mode).
+3. Choose **Wide** or **Twin**. The hub only offers the wide display once it re-detects a monitor, so the first time after each dock reconnect DockDesk switches one monitor off (over DDC/CI) and asks you to press its power button. If that is not possible it asks you to replug one monitor's cable at the dock instead. To avoid this step altogether, see [Start in split mode](#start-in-split-mode).
 4. Twin mode needs **Screen Recording** permission (System Settings → Privacy & Security).
 
 ## Hub firmware
@@ -76,10 +78,10 @@ Software-only ways to make the hub re-detect a monitor were tested and do not wo
 The same operations are available from the command line:
 
 ```
-twindeskctl status
-twindeskctl mode wide|mirror
-twindeskctl fw state | backup | checksum | flash --cab <dell.cab> [--split-default] [--write] [--rc-reboot]
-twindeskctl kick <method>     # re-detect experiments, see the source
+dockdeskctl status
+dockdeskctl mode wide|mirror
+dockdeskctl fw state | backup | checksum | flash --cab <dell.cab> [--split-default] [--write] [--rc-reboot]
+dockdeskctl kick <method>     # re-detect experiments, see the source
 ```
 
 `fw flash` is a dry run unless `--write` is given.
@@ -88,7 +90,7 @@ twindeskctl kick <method>     # re-detect experiments, see the source
 
 - **Firmware writes can break your dock.** An interrupted or failed write can leave the dock without video output. The flasher has completed an upgrade and a downgrade on one WD19S. That is all the evidence there is.
 - **Older firmware means missing fixes.** Dell's later hub versions include fixes you give up by running 05.07.04, and any Dell dock update will remove the split feature again.
-- **Private interfaces.** TwinDesk uses undocumented macOS calls (`IODPDevice`, `CGVirtualDisplay`, CoreGraphics display-mode services). Any macOS update can break it.
+- **Private interfaces.** DockDesk uses undocumented macOS calls (`IODPDevice`, `CGVirtualDisplay`, CoreGraphics display-mode services). Any macOS update can break it.
 - **Twin mode trade-offs.** One to two frames of added latency, copy-protected video shows as black, 60 Hz at 1× only, and a hidden third display remains in the arrangement.
 - No warranty of any kind. Not affiliated with Dell, Synaptics or Apple.
 
@@ -97,14 +99,14 @@ twindeskctl kick <method>     # re-detect experiments, see the source
 Needs only the Xcode Command Line Tools.
 
 ```
-swift build                      # libraries and twindeskctl
-./scripts/build-app.sh           # dist/TwinDesk.app (release, ad-hoc signed)
+swift build                      # libraries and dockdeskctl
+./scripts/build-app.sh           # dist/DockDesk.app (release, ad-hoc signed)
 ./scripts/build-app.sh --dev     # development build, see below
 ```
 
-`./scripts/make-dmg.sh <version>` packages `dist/TwinDesk.app` as a DMG. Releases are made by pushing a version tag (`git tag v0.2.0 && git push origin v0.2.0`): the [release workflow](.github/workflows/release.yml) builds the app and the DMG, publishes a GitHub release and updates the Homebrew cask in [`Casks/twindesk.rb`](Casks/twindesk.rb).
+`./scripts/make-dmg.sh <version>` packages `dist/DockDesk.app` as a DMG. Releases are made by pushing a version tag (`git tag v0.2.0 && git push origin v0.2.0`): the [release workflow](.github/workflows/release.yml) builds the app and the DMG, publishes a GitHub release and updates the Homebrew cask in [`Casks/dockdesk.rb`](Casks/dockdesk.rb).
 
-macOS ties the Screen Recording permission of an ad-hoc signed app to the exact binary, so every rebuild of `TwinDesk.app` loses it. The `--dev` build avoids that: `dist/TwinDesk Dev.app` is a tiny fixed launcher that loads the freshly built app code from `dist/libTwinDeskDev.dylib`.
+macOS ties the Screen Recording permission of an ad-hoc signed app to the exact binary, so every rebuild of `DockDesk.app` loses it. The `--dev` build avoids that: `dist/DockDesk Dev.app` is a tiny fixed launcher that loads the freshly built app code from `dist/libDockDeskDev.dylib`.
 
 Tests for the firmware module (the Command Line Tools lack XCTest, hence the extra flags):
 
@@ -113,7 +115,7 @@ swift test --filter FirmwareKitTests \
     -Xswiftc -plugin-path -Xswiftc /Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing
 ```
 
-Tests that need real firmware images are skipped unless you provide them (`TWINDESK_FWDUMP_DIR`, `TWINDESK_CAB_DIR`).
+Tests that need real firmware images are skipped unless you provide them (`DOCKDESK_FWDUMP_DIR`, `DOCKDESK_CAB_DIR`).
 
 ## Layout
 
@@ -123,8 +125,8 @@ Tests that need real firmware images are skipped unless you provide them (`TWIND
 | `Sources/DockKit` | Swift wrapper: dock detection, state, mode switching |
 | `Sources/TwinKit` | Twin mode: virtual displays, capture, output window |
 | `Sources/FirmwareKit` | Package verification, backup, flash planning and execution, simulator |
-| `Sources/TwinDeskApp`, `Sources/TwinDesk` | Menu-bar app and Setup window |
-| `Sources/twindeskctl` | Command-line tool |
+| `Sources/DockDeskApp`, `Sources/DockDesk` | Menu-bar app and Setup window |
+| `Sources/dockdeskctl` | Command-line tool |
 | `docs/` | Firmware procedure and research notes |
 
 ## Credits

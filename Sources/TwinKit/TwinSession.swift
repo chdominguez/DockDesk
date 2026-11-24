@@ -37,8 +37,8 @@ public final class TwinSession {
         physical = phys
         let origin = CGDisplayBounds(phys).origin
 
-        guard let l = VirtualScreen(name: "TwinDesk Left", serial: 1, width: w, height: h, hz: Double(fps)),
-              let r = VirtualScreen(name: "TwinDesk Right", serial: 2, width: w, height: h, hz: Double(fps)) else { throw TwinError.virtualDisplayFailed }
+        guard let l = VirtualScreen(name: "DockDesk Left", serial: 1, width: w, height: h, hz: Double(fps)),
+              let r = VirtualScreen(name: "DockDesk Right", serial: 2, width: w, height: h, hz: Double(fps)) else { throw TwinError.virtualDisplayFailed }
         left = l; right = r
         log("virtual displays \(l.id) and \(r.id) created")
         try await Task.sleep(nanoseconds: 1_500_000_000) // let WindowServer register them

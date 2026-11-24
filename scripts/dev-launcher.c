@@ -13,13 +13,13 @@ int main(void) {
     char exe[4096], real[4096], lib[4200];
     uint32_t n = sizeof exe;
     if (_NSGetExecutablePath(exe, &n) || !realpath(exe, real)) return 1;
-    // <dir>/TwinDesk Dev.app/Contents/MacOS/TwinDesk -> <dir>/libTwinDeskDev.dylib
+    // <dir>/DockDesk Dev.app/Contents/MacOS/DockDesk -> <dir>/libDockDeskDev.dylib
     char *dir = dirname(dirname(dirname(dirname(real))));
-    snprintf(lib, sizeof lib, "%s/libTwinDeskDev.dylib", dir);
+    snprintf(lib, sizeof lib, "%s/libDockDeskDev.dylib", dir);
     void *h = dlopen(lib, RTLD_NOW);
-    if (!h) { fprintf(stderr, "TwinDesk dev launcher: %s\n", dlerror()); return 1; }
-    void (*entry)(void) = (void (*)(void))dlsym(h, "twindesk_main");
-    if (!entry) { fprintf(stderr, "TwinDesk dev launcher: entry point missing\n"); return 1; }
+    if (!h) { fprintf(stderr, "DockDesk dev launcher: %s\n", dlerror()); return 1; }
+    void (*entry)(void) = (void (*)(void))dlsym(h, "dockdesk_main");
+    if (!entry) { fprintf(stderr, "DockDesk dev launcher: entry point missing\n"); return 1; }
     entry();
     return 0;
 }

@@ -32,7 +32,7 @@ public enum FirmwarePackage {
     /// Verify the cabinet, extract only `vmm5331.bin` into a fresh temporary directory, verify its hash, parse it.
     public static func loadHubImage(fromCab url: URL) throws -> VMMImage {
         let pkg = try verifyCab(at: url)
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("twindesk-cab-\(UUID().uuidString)")
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("dockdesk-cab-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
 

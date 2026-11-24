@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build TwinDesk.app (release) into ./dist and sign it.
+# Build DockDesk.app (release) into ./dist and sign it.
 # Set SIGN_ID to a code-signing identity to keep the Screen Recording
 # permission across rebuilds; the default ad-hoc signature changes every build.
 # Set VERSION (e.g. 0.2.0) and BUILD to stamp the bundle; release builds do.
@@ -12,8 +12,8 @@ cat > "$1/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
   <key>CFBundleIdentifier</key><string>$2</string>
-  <key>CFBundleName</key><string>TwinDesk</string>
-  <key>CFBundleExecutable</key><string>TwinDesk</string>
+  <key>CFBundleName</key><string>DockDesk</string>
+  <key>CFBundleExecutable</key><string>DockDesk</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>${VERSION:-0.1.0}</string>
@@ -27,26 +27,26 @@ PLIST
 
 if [ "$1" = "--dev" ]; then
     # Rebuild only the app library; the launcher bundle is created once and then left alone.
-    swift build --product TwinDeskDev
+    swift build --product DockDeskDev
     mkdir -p dist
-    cp .build/debug/libTwinDeskDev.dylib dist/libTwinDeskDev.dylib
-    APP="dist/TwinDesk Dev.app"
-    if [ ! -x "$APP/Contents/MacOS/TwinDesk" ]; then
+    cp .build/debug/libDockDeskDev.dylib dist/libDockDeskDev.dylib
+    APP="dist/DockDesk Dev.app"
+    if [ ! -x "$APP/Contents/MacOS/DockDesk" ]; then
         mkdir -p "$APP/Contents/MacOS"
-        clang -O1 -o "$APP/Contents/MacOS/TwinDesk" scripts/dev-launcher.c
-        plist "$APP" io.github.twindesk.TwinDesk.dev
+        clang -O1 -o "$APP/Contents/MacOS/DockDesk" scripts/dev-launcher.c
+        plist "$APP" io.github.dockdesk.DockDesk.dev
         mkdir -p "$APP/Contents/Resources"; cp Resources/AppIcon.icns "$APP/Contents/Resources/"
         codesign --force --sign - "$APP"
         echo "created $APP (grant Screen Recording to it once)"
     fi
-    echo "built dist/libTwinDeskDev.dylib"
+    echo "built dist/libDockDeskDev.dylib"
     exit 0
 fi
-swift build -c release --arch arm64 --product TwinDesk
-APP=dist/TwinDesk.app
+swift build -c release --arch arm64 --product DockDesk
+APP=dist/DockDesk.app
 rm -rf "$APP"; mkdir -p "$APP/Contents/MacOS"
-cp "$(swift build -c release --arch arm64 --show-bin-path)/TwinDesk" "$APP/Contents/MacOS/TwinDesk"
-plist "$APP" io.github.twindesk.TwinDesk
+cp "$(swift build -c release --arch arm64 --show-bin-path)/DockDesk" "$APP/Contents/MacOS/DockDesk"
+plist "$APP" io.github.dockdesk.DockDesk
 mkdir -p "$APP/Contents/Resources"; cp Resources/AppIcon.icns "$APP/Contents/Resources/"
 codesign --force --sign "${SIGN_ID:--}" "$APP"
 echo "built $APP"

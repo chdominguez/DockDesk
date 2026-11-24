@@ -1,3 +1,0 @@
-import TwinDeskApp
-
-twindeskMain()
