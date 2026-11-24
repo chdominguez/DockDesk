@@ -39,6 +39,7 @@ With [Homebrew](https://brew.sh):
 
 ```
 brew tap chdominguez/twindesk https://github.com/chdominguez/TwinDesk
+brew trust chdominguez/twindesk   # newer Homebrew only loads casks from trusted taps
 brew install --cask twindesk
 ```
 

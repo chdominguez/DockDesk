@@ -2,6 +2,7 @@
 # .github/workflows/release.yml whenever a release is published.
 #
 #   brew tap chdominguez/twindesk https://github.com/chdominguez/TwinDesk
+#   brew trust chdominguez/twindesk   # newer Homebrew only loads casks from trusted taps
 #   brew install --cask twindesk
 cask "twindesk" do
   version "0.1.0"
