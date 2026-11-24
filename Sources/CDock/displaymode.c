@@ -37,6 +37,17 @@ int td_set_native_mode(uint32_t display, uint32_t w, uint32_t h, uint32_t max_hz
     return CGCompleteDisplayConfiguration(cfg, kCGConfigurePermanently) ? 3 : 0;
 }
 
+bool td_has_native_mode(uint32_t display, uint32_t w, uint32_t h) {
+    int n = 0;
+    CGSGetNumberOfDisplayModes(display, &n);
+    for (int i = 0; i < n; i++) {
+        td_cgs_mode m;
+        CGSGetDisplayModeDescriptionOfLength(display, i, &m, sizeof m);
+        if (m.d.width == w && m.d.height == h && m.d.density == 1.0f) return true;
+    }
+    return false;
+}
+
 // Debug helper: print the modes wider than 2000 px.
 #include <stdio.h>
 void td_dump_modes(uint32_t display) {

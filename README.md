@@ -37,7 +37,7 @@ The research behind this, including why forcing MST from the Mac cannot work, is
 
 1. Build and start the app (see [Building](#building)).
 2. Open **Setup and firmware…** from the menu bar icon. It tells you whether your dock and firmware are supported.
-3. Choose **Wide** or **Twin**. The first time after each dock reconnect, TwinDesk asks you to unplug and replug one monitor's cable at the dock; the hub only offers the wide display once a monitor is re-detected.
+3. Choose **Wide** or **Twin**. The hub only offers the wide display once it re-detects a monitor, so the first time after each dock reconnect TwinDesk switches one monitor off (over DDC/CI) and asks you to press its power button. If that is not possible it asks you to replug one monitor's cable at the dock instead. To avoid this step altogether, see [Start in split mode](#start-in-split-mode).
 4. Twin mode needs **Screen Recording** permission (System Settings → Privacy & Security).
 
 ## Hub firmware
@@ -47,15 +47,25 @@ The Setup window can:
 - **Back up** the hub's flash (always done automatically before any install).
 - **Install 05.07.04**, the last version with the split feature.
 - **Install 05.07.08**, to return to a current Dell version.
+- **Start in split mode**, see below.
 
 What an install does: downloads Dell's own firmware package from [LVFS](https://fwupd.org), checks it against a built-in SHA-256, writes the hub image to the hub's spare flash bank, verifies it by read-back and by the hub's checksum command, only then marks it valid and retires the old bank, and restarts the hub. Only the video hub is touched, never the dock's controller or USB hubs. The procedure follows [fwupd](https://github.com/fwupd/fwupd)'s Synaptics and Dell dock plugins; details and open questions are in [docs/flasher.md](docs/flasher.md).
+
+### Start in split mode
+
+Dell's firmware starts the hub in mirror mode after every dock reconnect, and switching to split only takes effect once a monitor is re-detected. The Setup window can write 05.07.04 again with that one default changed, so the hub starts in split mode and the wide display is there as soon as the dock connects: nothing to press or replug.
+
+The image differs from Dell's in two bytes: the mode byte in the config block (`03` to `02`) and the config block's checksum byte. It is written with the same procedure as any other install. **Restore Dell's 05.07.04** undoes it. This is no longer an unmodified Dell image, and it has been installed on one WD19S only.
+
+Software-only ways to make the hub re-detect a monitor were tested and do not work on this hub (toggling its MST bit or power state, powering an output down and up over sideband, DDC standby). Only a full DDC power-off is seen as an unplug, and a monitor that is off cannot be woken over DDC, hence the power button.
 
 The same operations are available from the command line:
 
 ```
 twindeskctl status
 twindeskctl mode wide|mirror
-twindeskctl fw state | backup | checksum | flash --cab <dell.cab> [--write] [--rc-reboot]
+twindeskctl fw state | backup | checksum | flash --cab <dell.cab> [--split-default] [--write] [--rc-reboot]
+twindeskctl kick <method>     # re-detect experiments, see the source
 ```
 
 `fw flash` is a dry run unless `--write` is given.
@@ -93,7 +103,7 @@ Tests that need real firmware images are skipped unless you provide them (`TWIND
 
 | Path | Contents |
 |---|---|
-| `Sources/CDock` | C: DisplayPort AUX access, Synaptics vendor protocol, guarded firmware primitives, display-mode selection |
+| `Sources/CDock` | C: DisplayPort AUX access, Synaptics vendor protocol, MST sideband and DDC, guarded firmware primitives, display-mode selection |
 | `Sources/DockKit` | Swift wrapper: dock detection, state, mode switching |
 | `Sources/TwinKit` | Twin mode: virtual displays, capture, output window |
 | `Sources/FirmwareKit` | Package verification, backup, flash planning and execution, simulator |

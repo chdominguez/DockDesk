@@ -15,6 +15,8 @@ public struct DockInfo {
     public var firmware: String { String(format: "%02d.%02d.%02d", raw.fw.0, raw.fw.1, raw.fw.2) }
     public var chip: String { String(format: "VMM%04X", raw.chip_id) }
     public var isSplitMode: Bool { raw.mode_byte & 0x0f == 2 }
+    /// The hub's firmware starts in split mode (TwinDesk's modified 05.07.04), so no re-detect is needed after a reconnect.
+    public var bootsInSplitMode: Bool { raw.boot_mode_byte & 0x0f == 2 }
     public var offersWideTiming: Bool { raw.wide_timing }
     public var isSplitting: Bool { raw.splitting }
     public var monitors: Int { Int(raw.monitors) }
@@ -33,12 +35,13 @@ public struct DockInfo {
 }
 
 public enum DockError: Error, CustomStringConvertible {
-    case noDock, query(Int32), setMode(Int32), noWideMode, noExternalDisplay
+    case noDock, query(Int32), setMode(Int32), softUnplug(Int32), noWideMode, noExternalDisplay
     public var description: String {
         switch self {
         case .noDock: return "no dock found on a DisplayPort output"
         case .query(let c): return "could not query the hub (\(c))"
         case .setMode(let c): return "could not set the hub mode (\(c))"
+        case .softUnplug(let c): return "could not switch a monitor off over DDC (\(c))"
         case .noWideMode: return "macOS does not offer the requested display mode"
         case .noExternalDisplay: return "no external display"
         }
@@ -62,6 +65,15 @@ public enum Dock {
         defer { td_close(d) }
         let r = td_set_edid_mode(d, on ? TD_MODE_SPLIT : TD_MODE_MIRROR)
         if r != 0 { throw DockError.setMode(r) }
+    }
+
+    /// Turn one monitor off over DDC/CI so the hub re-detects it when its power button is pressed.
+    /// Replaces unplugging a monitor cable; see `td_soft_unplug`.
+    public static func softUnplug() throws {
+        guard let d = td_open() else { throw DockError.noDock }
+        defer { td_close(d) }
+        let r = td_soft_unplug(d)
+        if r != 0 { throw DockError.softUnplug(r) }
     }
 
     /// The physical external display (ignores virtual displays, which report vendor 0x7477).

@@ -517,3 +517,30 @@ The Command Line Tools have no XCTest, so the tests use Swift Testing. With CLT 
 `emit-module` job does not get the Testing macro plugin path ("plugin for module 'TestingMacros' not
 found"), hence the extra `-Xswiftc` flags. Tests that need the dump or the cabinets are disabled when
 the files are missing; override their locations with `TWINDESK_FWDUMP_DIR` and `TWINDESK_CAB_DIR`.
+
+## Split as the boot default (modified image)
+
+`FlashTarget.splitDefault` builds the one non-Dell target this module can write: Dell's 05.07.04 with
+the hub's start-up display mode changed from mirror to split.
+
+| Offset in bank | Dell | Modified | Meaning |
+|---|---|---|---|
+| `0x140` | `03` | `02` | mode byte, loaded to RAM `0x1740` at boot (low nibble: 3 = mirror, 2 = split) |
+| `0x1FF` | `a4` | `a5` | config block checksum byte, keeps the byte sum of `0x100..0x1FF` at 0 mod 256 |
+
+Nothing else differs. The bank's byte sum is unchanged (-1, +1), so RC 0x11 cannot tell the two images
+apart; the plan's full read-back compare does. Dell's tags are kept (assumption A4). The target is
+refused for any image other than the known 05.07.04, and if the two bytes do not hold the Dell values.
+
+Why: with Dell's default the hub builds its upstream EDID in mirror mode at boot. Setting RAM `0x1740`
+afterwards only takes effect when a monitor is detected again. With split as the boot default the
+aggregate EDID is built during the first detection.
+
+Additional assumptions: the boot ROM accepts a config block whose content changed but whose sum is
+valid; the firmware reads the mode from the config copy at boot and not from elsewhere.
+
+Going back: install Dell's 05.07.04 (or 05.07.08) normally. The guards compare the running bank with
+the fresh backup by tag, byte sum and version, so they hold on the modified image as well.
+
+Simulator tests: `splitDefaultDiffersInExactlyTwoBytes`, `splitDefaultOnlyFor050704`,
+`splitDefaultInstallAndReturn`.

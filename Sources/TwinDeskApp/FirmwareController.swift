@@ -20,6 +20,8 @@ final class FirmwareController: ObservableObject {
     @Published private(set) var fraction = 0.0
     /// Package awaiting the user's confirmation in the Setup window.
     @Published var pendingInstall: KnownPackage?
+    /// The split-as-boot-default install awaits the user's confirmation.
+    @Published var pendingSplitDefault = false
 
     var isWorking: Bool { phase == .working }
     /// Called before a job touches the dock (stop Twin mode, pause polling) and after it finished.
@@ -51,7 +53,9 @@ final class FirmwareController: ObservableObject {
     }
 
     /// Download Dell's package, back up the hub, write the hub firmware, restart the hub, confirm.
-    func install(_ pkg: KnownPackage) {
+    /// With `splitDefault`, Dell's image is written with its boot default changed from mirror to split
+    /// (`FlashTarget.splitDefault`), so the hub offers the wide display right after a reconnect.
+    func install(_ pkg: KnownPackage, splitDefault: Bool = false) {
         run { report in
             report("Downloading Dell package", pkg.fileName, 0.0)
             let cab = try Self.fetchPackage(pkg) { f in report("Downloading Dell package", pkg.fileName, 0.05 * f) }
@@ -64,7 +68,8 @@ final class FirmwareController: ObservableObject {
                 let snap = try DeviceReader.snapshot(t)
                 var opts = FlashOptions()
                 opts.restart = .rcReboot
-                let plan = try FlashPlanner.plan(snapshot: snap, target: try FlashTarget.dell(image), backup: backup, power: SystemPowerSource(), options: opts)
+                let target = splitDefault ? try FlashTarget.splitDefault(image) : try FlashTarget.dell(image)
+                let plan = try FlashPlanner.plan(snapshot: snap, target: target, backup: backup, power: SystemPowerSource(), options: opts)
 
                 // Stage -> progress band inside 0.48...0.95
                 let bands: [String: (Double, String)] = [
@@ -92,17 +97,20 @@ final class FirmwareController: ObservableObject {
                 return formatVersion(plan.targetVersion)
             }
 
-            // The hub reboots itself; wait for it to come back and confirm the version.
-            var seen = "nothing"
+            // The hub reboots itself; wait for it to come back and confirm the version and the boot default.
+            var seen = "nothing", bootsSplit = false
             for i in 0..<30 {
                 report("Restarting the hub", "Waiting for the dock to come back", 0.95 + 0.05 * Double(i) / 30)
                 Thread.sleep(forTimeInterval: 2)
-                if let i = try? Dock.info() { seen = i.firmware; if seen == result { break } }
+                if let i = try? Dock.info() { seen = i.firmware; bootsSplit = i.bootsInSplitMode; if seen == result && bootsSplit == splitDefault { break } }
             }
             guard seen == result else {
                 throw NSError(domain: "TwinDesk", code: 3, userInfo: [NSLocalizedDescriptionKey: "The firmware was written and verified, but the hub reports \(seen) instead of \(result). Unplug the dock's power adapter for ten seconds and check again."])
             }
-            return "Hub firmware is now \(result)."
+            guard bootsSplit == splitDefault else {
+                throw NSError(domain: "TwinDesk", code: 4, userInfo: [NSLocalizedDescriptionKey: "The firmware was written and verified, but the hub still starts in \(bootsSplit ? "split" : "mirror") mode. Unplug the dock's power adapter for ten seconds and check again."])
+            }
+            return splitDefault ? "Hub firmware \(result) now starts in split mode. No monitor re-detect is needed after a reconnect." : "Hub firmware is now \(result)."
         }
     }
 

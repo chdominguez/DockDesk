@@ -25,11 +25,11 @@ struct SetupView: View {
                 Divider()
                 Text("How it works").font(.headline)
                 step("1", "The dock's video hub can cut one wide picture in two, one half per monitor. TwinDesk switches that on.")
-                step("2", "After every dock reconnect, replug one monitor's cable at the dock once so the hub offers the wide display.")
+                step("2", "The hub only offers the wide display after it detects a monitor. After a dock reconnect TwinDesk switches one monitor off and asks you to press its power button. With \"Start in split mode\" below, this step is not needed.")
                 step("3", "Wide gives one desktop across both monitors. Twin adds two virtual monitors on top so macOS treats them as separate desktops. Twin needs Screen Recording permission.")
                 Divider()
                 Text("Good to know").font(.headline)
-                Text("• Each monitor runs at 1920×1080, 60 Hz.\n• Twin mode adds a frame or two of delay and shows copy-protected video as black.\n• The hub setting is temporary; unplugging the dock resets it.\n• TwinDesk uses private macOS interfaces and may break with a system update.")
+                Text("• Each monitor runs at 1920×1080, 60 Hz.\n• Twin mode adds a frame or two of delay and shows copy-protected video as black.\n• The hub setting is temporary and resets when the dock is unplugged, unless the hub starts in split mode.\n• TwinDesk uses private macOS interfaces and may break with a system update.")
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(24)
@@ -63,7 +63,7 @@ struct SetupView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Hub firmware").font(.headline)
             if let info, supported {
-                Text("Installed: \(info.firmware)").monospacedDigit()
+                Text("Installed: \(info.firmware)\(info.bootsInSplitMode ? ", starts in split mode (modified by TwinDesk)" : "")").monospacedDigit()
             }
             switch firmware.phase {
             case .working:
@@ -88,11 +88,19 @@ struct SetupView: View {
             if !firmware.isWorking {
                 let split = KnownFirmware.viewXpandPackage, latest = KnownFirmware.latestPackage
                 HStack {
-                    Button("Install \(split.hubVersionString) (enables split)") { firmware.pendingInstall = split }
-                        .disabled(!supported || info?.firmware == split.hubVersionString)
+                    Button(info?.bootsInSplitMode == true ? "Restore Dell's \(split.hubVersionString)" : "Install \(split.hubVersionString) (enables split)") { firmware.pendingInstall = split }
+                        .disabled(!supported || (info?.firmware == split.hubVersionString && info?.bootsInSplitMode != true))
                     Button("Install Dell's \(latest.hubVersionString)") { firmware.pendingInstall = latest }
                         .disabled(!supported || info?.firmware == latest.hubVersionString)
                 }
+                Button("Start in split mode (no re-detect after reconnecting)") { firmware.pendingSplitDefault = true }
+                    .disabled(!supported || info?.firmware != split.hubVersionString || info?.bootsInSplitMode == true)
+                    .alert("Make split the hub's start-up mode?", isPresented: $firmware.pendingSplitDefault) {
+                        Button("Install", role: .destructive) { firmware.install(split, splitDefault: true) }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text("TwinDesk will write Dell's \(split.hubVersionString) again with one setting changed, so the hub starts in split mode and the wide display is there right after a reconnect. This is no longer an unmodified Dell image. Mirror stays available from the menu.\n\nSame procedure and risks as any firmware install: about seven minutes, keep the dock plugged in and powered, and an interrupted or failed write can leave the dock without video. Tested on one WD19S only. \"Restore Dell's \(split.hubVersionString)\" undoes it.")
+                    }
                 HStack {
                     Button("Back up now") { firmware.backup() }.disabled(!supported)
                     Button("Show backups") { firmware.revealBackups() }

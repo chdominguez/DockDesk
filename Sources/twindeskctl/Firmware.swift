@@ -53,13 +53,14 @@ func firmwareCommand(_ args: [String]) {
                 print(String(format: "crc16 0x00000+0x1a000: hub 0x%04x", chip))
             }
         case "flash": // dry run unless --write
-            guard let cab = value("--cab") else { fail("usage: twindeskctl fw flash --cab <dell.cab> [--write] [--stop-after <stage>] [--rc-reboot]") }
+            guard let cab = value("--cab") else { fail("usage: twindeskctl fw flash --cab <dell.cab> [--split-default] [--write] [--stop-after <stage>] [--rc-reboot]") }
             let image = try FirmwarePackage.loadHubImage(fromCab: URL(fileURLWithPath: cab))
             let backup = try latestBackup()
             let snap = try DeviceReader.snapshot(t)
             var opts = FlashOptions()
             if args.contains("--rc-reboot") { opts.restart = .rcReboot }
-            let plan = try FlashPlanner.plan(snapshot: snap, target: try FlashTarget.dell(image), backup: backup, power: SystemPowerSource(), options: opts)
+            let target = args.contains("--split-default") ? try FlashTarget.splitDefault(image) : try FlashTarget.dell(image)
+            let plan = try FlashPlanner.plan(snapshot: snap, target: target, backup: backup, power: SystemPowerSource(), options: opts)
             print(plan.summary())
             let write = args.contains("--write")
             let stop = value("--stop-after").flatMap(StageKind.init(rawValue:))
@@ -74,7 +75,7 @@ func firmwareCommand(_ args: [String]) {
             print("dryRun=\(rep.dryRun) stages=\(rep.completedStages.map(\.rawValue)) sent=\(rep.mutatingOpsSent) skipped=\(rep.mutatingOpsSkipped) verified=\(rep.verificationsCompared) unverified=\(rep.verificationsSkipped)")
             print(rep.nextStep)
         default:
-            fail("usage: twindeskctl fw state | backup | checksum [--crc16] | flash --cab <file> [--write] [--stop-after <stage>]")
+            fail("usage: twindeskctl fw state | backup | checksum [--crc16] | flash --cab <file> [--split-default] [--write] [--stop-after <stage>]")
         }
     } catch { fail("fw: \(error)") }
 }

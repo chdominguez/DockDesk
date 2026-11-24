@@ -101,7 +101,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let want = self.desired
             let ok: Bool
             switch want {
-            case .mirror: ok = true // the hub's own default; nothing to restore
+            case .mirror: ok = !info.isSplitting // a hub that starts in split mode may come back wide
             case .wide: ok = info.isSplitting && self.twin == nil
             case .twin: ok = info.isSplitting && self.twin != nil
             }
@@ -242,15 +242,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
-    /// Hub split mode on, wait for the wide timing (needs a monitor replug the first time), 3840x1080.
+    /// Hub split mode on, wait for the wide timing, 3840x1080. The hub only offers the wide timing after it
+    /// re-detects a monitor (unless its firmware boots in split mode): TwinDesk switches one monitor off over
+    /// DDC and the user presses its power button, or replugs a cable if that is not possible.
     private func enterWide(automatic: Bool = false) async throws {
         busy = "Switching to Wide…"
         try await onDock { try Dock.setSplit(true) }
         var i = try await onDock { try Dock.info() }
         if !i.offersWideTiming {
-            busy = "Replug one monitor cable at the dock to finish"
-            if !automatic {
-                alert("Replug one monitor", "Unplug one monitor's DisplayPort cable at the dock, wait five seconds and plug it back in. Do not unplug the dock from the Mac. TwinDesk continues automatically.")
+            busy = "Re-detecting monitors…"
+            var soft = false
+            if (try? await onDock({ try Dock.softUnplug() })) != nil {
+                for _ in 0..<8 where !soft {
+                    try await Task.sleep(nanoseconds: 1_000_000_000)
+                    if let now = try? await onDock({ try Dock.info() }), now.monitors < i.monitors { soft = true }
+                }
+            }
+            if soft {
+                busy = "Press the power button of the monitor that turned off"
+                if !automatic {
+                    alert("Turn the monitor back on", "TwinDesk switched one monitor off so the dock detects it again. Press that monitor's power button. TwinDesk continues automatically.")
+                }
+            } else {
+                busy = "Replug one monitor cable at the dock to finish"
+                if !automatic {
+                    alert("Replug one monitor", "Unplug one monitor's DisplayPort cable at the dock, wait five seconds and plug it back in. Do not unplug the dock from the Mac. TwinDesk continues automatically.")
+                }
             }
             for _ in 0..<60 where !i.offersWideTiming {
                 try await Task.sleep(nanoseconds: 2_000_000_000)

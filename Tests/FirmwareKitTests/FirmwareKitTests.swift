@@ -389,6 +389,39 @@ import Testing
         #expect(t.content(forBank: 1) == TD.img0708!.bankContent(for: 1))
     }
 
+    @Test(.enabled(if: TD.img0704 != nil)) func splitDefaultDiffersInExactlyTwoBytes() throws {
+        let dell = try FlashTarget.dell(TD.img0704!), split = try FlashTarget.splitDefault(TD.img0704!)
+        for bank in 0..<2 {
+            let a = dell.content(forBank: bank), b = split.content(forBank: bank)
+            let diff = a.indices.filter { a[$0] != b[$0] }
+            #expect(diff == [FlashTarget.modeByteOffset, FlashTarget.configChecksumOffset])
+            #expect(a[0x140] == 0x03 && b[0x140] == 0x02)
+            #expect(Checksum.sum32(a) == Checksum.sum32(b))
+            let info = BankInfo.inspect(bank: bank, ArraySlice(b))
+            #expect(info.looksLikeWD19Firmware && info.tagValid && info.tagSectorPaddingOnly)
+        }
+    }
+
+    @Test(.enabled(if: TD.haveAll)) func splitDefaultOnlyFor050704() throws {
+        #expect(throws: ImageError.self) { try FlashTarget.splitDefault(TD.img0708!) }
+    }
+
+    /// Dell 05.07.04 -> split default -> back to Dell 05.07.04, all on the simulator.
+    @Test(.enabled(if: TD.haveDumpAnd0704)) func splitDefaultInstallAndReturn() throws {
+        let hub = TD.dumpHub()
+        for target in [try FlashTarget.dell(TD.img0704!), try FlashTarget.splitDefault(TD.img0704!), try FlashTarget.dell(TD.img0704!)] {
+            let plan = try FlashPlanner.plan(snapshot: try DeviceReader.snapshot(hub), target: target, backup: try TD.backup(of: hub), power: TD.ac)
+            let rep = try FlashExecutor(transport: hub, log: TD.silent).execute(plan, allowWrites: true)
+            #expect(!rep.dryRun)
+            hub.powerCycle()
+            let snap = try DeviceReader.snapshot(hub)
+            #expect(snap.activeBank == plan.targetBank)
+            let base = Panamera.bankBase(plan.targetBank)
+            #expect(Array(hub.flash[base..<(base + Panamera.bankSize)]) == target.content(forBank: plan.targetBank))
+            #expect(hub.programViolations == 0)
+        }
+    }
+
     @Test(.enabled(if: TD.haveAll)) func dellLatestTarget() throws {
         let t = try FlashTarget.dell(TD.img0708!)
         #expect(t.version == [5, 7, 8] && KnownFirmware.latestPackage.hubVersion == [5, 7, 8])

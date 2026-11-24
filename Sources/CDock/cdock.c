@@ -17,6 +17,8 @@ enum { RC_CAP = 0x4B0, RC_CMD = 0x4B2, RC_LEN = 0x4B8, RC_OFFSET = 0x4BC, RC_DAT
 enum { CMD_ENABLE_RC = 0x01, CMD_DISABLE_RC = 0x02, CMD_WRITE_MEMORY = 0x21, CMD_READ_FLASH = 0x30, CMD_READ_MEMORY = 0x31 };
 enum { RAM_EDID = 0x1600, RAM_CONFIG = 0x1700, RAM_EDID_MODE = 0x1740, RAM_PORTS = 0x1820 };
 
+static int running_bank(td_dock *d);
+
 td_dock *td_open(void) {
     io_iterator_t it;
     if (IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("DCPDPDeviceProxy"), &it) != KERN_SUCCESS) return NULL;
@@ -130,6 +132,8 @@ int td_get_info(td_dock *d, td_info *info) {
     if (!td_rc_read_memory(d, RAM_CONFIG, cfg, 4) && !memcmp(cfg, "\x20\x00\x83\x83", 4)) {
         info->layout_known = true;
         td_rc_read_memory(d, RAM_EDID_MODE, &info->mode_byte, 1);
+        int bank = running_bank(d);
+        if (bank >= 0) td_rc_read_flash(d, (uint32_t)bank * 0x20000 + 0x140, &info->boot_mode_byte, 1);
         if (!td_rc_read_memory(d, RAM_PORTS, p, 16)) {
             info->monitors = p[1] & 0x0f;
             info->upstream_width = (uint16_t)(p[2] << 8 | p[3]);

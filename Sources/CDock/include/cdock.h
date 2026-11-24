@@ -47,6 +47,7 @@ typedef struct {
     bool rc_supported;
     bool layout_known;       // config block signature 20 00 83 83 found at RAM 0x1700
     uint8_t mode_byte;       // RAM 0x1740
+    uint8_t boot_mode_byte;  // what 0x1740 is loaded with at boot: flash 0x140 of the running bank (0 if unreadable)
     uint8_t monitors;        // low nibble of RAM 0x1821
     uint16_t upstream_width; // RAM 0x1822 (valid on firmware with ViewXpand)
     uint16_t port_width;     // RAM 0x1824
@@ -61,9 +62,30 @@ int td_get_info(td_dock *d, td_info *info);
 // Set the low nibble of RAM 0x1740 (volatile). Only TD_MODE_SPLIT / TD_MODE_MIRROR accepted.
 int td_set_edid_mode(td_dock *d, td_edid_mode mode);
 
+// --- MST sideband to the hub (sideband.c). The hub stays in single-stream mode. ---
+// td_sb_begin enables sideband (DPCD 0x111 = 0x06), td_sb_end restores 0x111 = 0.
+int td_sb_begin(td_dock *d);
+int td_sb_end(td_dock *d);
+// Raw LINK_ADDRESS reply body (port list). Returns its length or <0.
+int td_sb_link_address(td_dock *d, uint8_t *reply, int cap);
+// POWER_DOWN_PHY / POWER_UP_PHY for one output port (1..3). 0 on ACK.
+int td_sb_power_phy(td_dock *d, uint8_t port, bool up);
+// Write the monitor's own DPCD 0x600 through the hub: state 1 = D0, 2 = D3. 0 on ACK.
+int td_sb_remote_set_power(td_dock *d, uint8_t port, uint8_t state);
+// DDC/CI power mode (VCP 0xD6) of the monitor behind one output: 1 = on, 4 = standby, 5 = off. 0 on ACK.
+int td_sb_ddc_power(td_dock *d, uint8_t port, uint8_t mode);
+
+// Software stand-in for unplugging a monitor cable: turns one monitor off over DDC/CI so the
+// hub sees it disappear. The monitor comes back (and the hub rebuilds its EDID) when its power
+// button is pressed; it cannot be woken over DDC. 0 on success.
+int td_soft_unplug(td_dock *d);
+
 // --- display modes (private CoreGraphics services, as used by displayplacer) ---
 // Switch `display` to a native (1x) mode of w x h, picking the highest refresh <= max_hz.
 // Returns 0 on success, 1 if no such mode exists.
 int td_set_native_mode(uint32_t display, uint32_t w, uint32_t h, uint32_t max_hz);
+
+// True if `display` offers a native (1x) mode of w x h at any refresh rate.
+bool td_has_native_mode(uint32_t display, uint32_t w, uint32_t h);
 
 void td_dump_modes(uint32_t display);
