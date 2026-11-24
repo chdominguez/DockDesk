@@ -5,8 +5,8 @@
 #   brew trust chdominguez/dockdesk   # newer Homebrew only loads casks from trusted taps
 #   brew install --cask dockdesk
 cask "dockdesk" do
-  version "0.1.0"
-  sha256 "ea445e48f9903d854fd5c12f7b29505198678861939ff648e40f7afc4e71cab4"
+  version "0.2.0"
+  sha256 "66cc7226988495eaeca2aa23ad0ac6d9f6b0f9645df08ee848515219f3f9c6dd"
 
   url "https://github.com/chdominguez/DockDesk/releases/download/v#{version}/DockDesk-#{version}.dmg"
   name "DockDesk"
