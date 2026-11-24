@@ -33,9 +33,22 @@ The research behind this, including why forcing MST from the Mac cannot work, is
 - Two monitors with **identical timings** on the dock's DisplayPort outputs.
 - **Hub firmware 05.07.04 or older.** Dell removed the split feature in 05.07.07. TwinDesk can install 05.07.04 for you (see below).
 
+## Installing
+
+With [Homebrew](https://brew.sh):
+
+```
+brew tap chdominguez/twindesk https://github.com/chdominguez/TwinDesk
+brew install --cask twindesk
+```
+
+Or download the DMG from the [latest release](https://github.com/chdominguez/TwinDesk/releases/latest) and drag TwinDesk to Applications.
+
+TwinDesk is not notarized by Apple. If macOS refuses to open it the first time, allow it under System Settings → Privacy & Security ("Open Anyway"), or run `xattr -dr com.apple.quarantine /Applications/TwinDesk.app`. Because the app is ad-hoc signed, macOS asks for the Screen Recording permission again after every update.
+
 ## Using it
 
-1. Build and start the app (see [Building](#building)).
+1. Install and start the app (or [build it](#building)).
 2. Open **Setup and firmware…** from the menu bar icon. It tells you whether your dock and firmware are supported.
 3. Choose **Wide** or **Twin**. The hub only offers the wide display once it re-detects a monitor, so the first time after each dock reconnect TwinDesk switches one monitor off (over DDC/CI) and asks you to press its power button. If that is not possible it asks you to replug one monitor's cable at the dock instead. To avoid this step altogether, see [Start in split mode](#start-in-split-mode).
 4. Twin mode needs **Screen Recording** permission (System Settings → Privacy & Security).
@@ -87,6 +100,8 @@ swift build                      # libraries and twindeskctl
 ./scripts/build-app.sh           # dist/TwinDesk.app (release, ad-hoc signed)
 ./scripts/build-app.sh --dev     # development build, see below
 ```
+
+`./scripts/make-dmg.sh <version>` packages `dist/TwinDesk.app` as a DMG. Releases are made by pushing a version tag (`git tag v0.2.0 && git push origin v0.2.0`): the [release workflow](.github/workflows/release.yml) builds the app and the DMG, publishes a GitHub release and updates the Homebrew cask in [`Casks/twindesk.rb`](Casks/twindesk.rb).
 
 macOS ties the Screen Recording permission of an ad-hoc signed app to the exact binary, so every rebuild of `TwinDesk.app` loses it. The `--dev` build avoids that: `dist/TwinDesk Dev.app` is a tiny fixed launcher that loads the freshly built app code from `dist/libTwinDeskDev.dylib`.
 
