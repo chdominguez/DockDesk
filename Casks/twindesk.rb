@@ -5,7 +5,7 @@
 #   brew install --cask twindesk
 cask "twindesk" do
   version "0.1.0"
-  sha256 :no_check
+  sha256 "ea445e48f9903d854fd5c12f7b29505198678861939ff648e40f7afc4e71cab4"
 
   url "https://github.com/chdominguez/TwinDesk/releases/download/v#{version}/TwinDesk-#{version}.dmg"
   name "TwinDesk"
