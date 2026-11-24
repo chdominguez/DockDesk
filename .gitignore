@@ -1,0 +1,7 @@
+.build/
+*.app
+fwdump/
+backups/
+.build-fw/
+dist/
+testdata/
